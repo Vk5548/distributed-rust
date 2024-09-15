@@ -17,8 +17,8 @@ pub async fn send_request(op: Op) {
 
     //Read the response from the server
     let mut buffer = vec![0; 1024];
-    let numberOfBytes = socket.read(&mut buffer).await.unwrap();
-    let response: RpcResponse = serde_json::from_slice(&buffer[..numberOfBytes]).unwrap();
+    let number_of_bytes = socket.read(&mut buffer).await.unwrap();
+    let response: RpcResponse = serde_json::from_slice(&buffer[..number_of_bytes]).unwrap();
 
     println!("Response from server {:?}", response);
 }
