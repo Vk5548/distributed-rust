@@ -1,5 +1,6 @@
 // To be included in the module tree, everything needs to be included in maain.rs?
 mod client;
+mod hash;
 mod rpc;
 mod server;
 

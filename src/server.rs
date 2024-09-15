@@ -1,8 +1,11 @@
+//author created crates
+use crate::hash::{hash_key_to_node, DataNode};
 use crate::rpc::Op;
+
+//std available crates
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt::format;
 use std::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
@@ -13,8 +16,11 @@ struct RpcResponse {
 }
 
 // Shared state across the project;
+// It changes for each available data store or data node we hvae
 lazy_static! {
-    static ref DATA_STORE: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
+    static ref DATA_STORE_A: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
+    static ref DATA_STORE_B: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
+    static ref DATA_STORE_C: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
 }
 
 pub async fn start_server() {
@@ -29,30 +35,43 @@ pub async fn start_server() {
     }
 }
 
+//Function to handle individual client connections; meaning for each client connection, this will be called
 async fn handle_client(mut socket: tokio::net::TcpStream) {
     let mut buffer = vec![0; 1024];
-    //getting the size of request form the client's TCP socket stream?
+
+    //getting the size of request from the client's TCP socket stream? and reading it into our created buffer
     let number_of_bytes = socket.read(&mut buffer).await.unwrap();
     // getting the request itself and serializing it into Op
     let request: Op = serde_json::from_slice(&buffer[..number_of_bytes]).unwrap();
 
-    //Processing the request
+    //Processing the request; Now we will include hashing to decide where the data should be written
     let response = match request {
         Op::Read(key) => {
-            let store = DATA_STORE.lock().unwrap();
-            let result = store
-                .get(&key)
-                .map(|val| format!("Data for key {} is {:?}", key, val))
-                .unwrap_or("Key not found".to_string());
-            RpcResponse { result }
+            let data_node = hash_key_to_node(&key);
+            let result = match data_node {
+                DataNode::A => read_from_node(&DATA_STORE_A, &key),
+                DataNode::B => read_from_node(&DATA_STORE_B, &key),
+                DataNode::C => read_from_node(&DATA_STORE_C, &key),
+            };
+
+            match result {
+                Some(data) => RpcResponse { result: data },
+                None => RpcResponse {
+                    result: "Key Not Found(404)".to_string(),
+                },
+            }
         }
         Op::Write(data) => {
             let key = "default_key".to_string();
-            let mut store = DATA_STORE.lock().unwrap();
-            let len = data.len();
-            store.insert(key.clone(), data);
+            let data_node = hash_key_to_node(&key);
+            match data_node {
+                DataNode::A => write_data_to_node(&DATA_STORE_A, key.clone(), data),
+                DataNode::B => write_data_to_node(&DATA_STORE_B, key.clone(), data),
+                DataNode::C => write_data_to_node(&DATA_STORE_C, key.clone(), data),
+            }
+
             RpcResponse {
-                result: format!("Stored these {} bytes of data under this {}", len, key),
+                result: format!("Stored data under key '{}' on node {:?}", key, data_node),
             }
         }
         _ => RpcResponse {
@@ -63,4 +82,18 @@ async fn handle_client(mut socket: tokio::net::TcpStream) {
     //Sending the response generated:
     let response_json = serde_json::to_string(&response).unwrap();
     socket.write_all(response_json.as_bytes()).await.unwrap();
+}
+
+//Helper functions to interact with data node
+fn read_from_node(store: &Mutex<HashMap<String, Vec<u8>>>, key: &str) -> Option<String> {
+    let store = store.lock().unwrap();
+    let result = store
+        .get(key)
+        .map(|val| format!("Data for key {} is {:?}", key, val));
+    result
+}
+
+fn write_data_to_node(store: &Mutex<HashMap<String, Vec<u8>>>, key: String, data: Vec<u8>) {
+    let mut store = store.lock().unwrap();
+    store.insert(key, data);
 }
