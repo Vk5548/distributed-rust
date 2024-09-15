@@ -61,8 +61,8 @@ async fn handle_client(mut socket: tokio::net::TcpStream) {
                 },
             }
         }
-        Op::Write(data) => {
-            let key = "default_key".to_string();
+        Op::Write(key, data) => {
+            //Modified to receive key from the client
             let data_node = hash_key_to_node(&key);
             match data_node {
                 DataNode::A => write_data_to_node(&DATA_STORE_A, key.clone(), data),

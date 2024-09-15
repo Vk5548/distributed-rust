@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Op{
+pub enum Op {
     Read(String),
-    Write(Vec<u8>),
+    Write(String, Vec<u8>), //Updated to include the key
     Stat(String),
-    Delete(String)
+    Delete(String),
 }
