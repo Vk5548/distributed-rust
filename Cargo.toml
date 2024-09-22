@@ -9,3 +9,11 @@ serde = { version = "1", features=["derive"] }
 serde_json = "1"
 #lazy_static for lazily intilizing these static values at runtime during their first access; for in-memory management
 lazy_static = "1.5.0"
+
+[lib]
+name = "simple_distribution_system"
+path = "src/lib.rs"
+
+[[bin]]
+name = "client_main"
+path = "src/bin/client_main.rs"
