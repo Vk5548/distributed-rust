@@ -1,4 +1,5 @@
 //custom-created crates
+// This will be removed because momentoHash will be implemented
 use crate::hash::{hash_key_to_node, DataNode};
 use crate::rpc::Op;
 
@@ -15,44 +16,52 @@ struct RpcResponse {
     result: String,
 }
 
-// Shared state across the project;
-// It changes for each available data store or data node we hvae
+// Now we don't need separate data stores here as each server container will have its own data structure
 lazy_static! {
-    static ref DATA_STORE_A: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
-    static ref DATA_STORE_B: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
-    static ref DATA_STORE_C: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
+    static ref DATA_STORE: Mutex<HashMap<String, Vec<u8>>> = Mutex::new(HashMap::new());
 }
 
-pub async fn start_server() {
-    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    println!("Server is starting on 127.0.0.1:8080");
+pub async fn start_server(
+    node_id: &str,
+    node_address: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    //Now binding to the specific server container
+    let listener = TcpListener::bind(node_address).await?;
+    println!("Server or node {} is starting on {}", node_id, node_address);
 
     loop {
-        let (socket, _) = listener.accept().await.unwrap();
-        tokio::spawn(async move {
-            handle_client(socket).await;
-        });
+        match listener.accept().await {
+            Ok((socket, _)) => {
+                let node_id_cloned = node_id.to_string();
+                tokio::spawn(async move {
+                    if let Err(e) = handle_client(socket, node_id_cloned).await {
+                        eprintln!("Error handling client: {}", e);
+                    }
+                });
+            }
+            Err(e) => {
+                eprintln!("Failed to accept connection: {}", e);
+            }
+        }
     }
 }
 
 //Function to handle individual client connections; meaning for each client connection, this will be called
-async fn handle_client(mut socket: tokio::net::TcpStream) {
+async fn handle_client(
+    mut socket: tokio::net::TcpStream,
+    node_id: String,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut buffer = vec![0; 1024];
 
     //getting the size of request from the client's TCP socket stream? and reading it into our created buffer
-    let number_of_bytes = socket.read(&mut buffer).await.unwrap();
+    let number_of_bytes = socket.read(&mut buffer).await?;
     // getting the request itself and serializing it into Op
-    let request: Op = serde_json::from_slice(&buffer[..number_of_bytes]).unwrap();
+    let request: Op = serde_json::from_slice(&buffer[..number_of_bytes])?;
 
     //Processing the request; Now we will include hashing to decide where the data should be written
     let response = match request {
         Op::Read(key) => {
-            let data_node = hash_key_to_node(&key);
-            let result = match data_node {
-                DataNode::A => read_from_node(&DATA_STORE_A, &key),
-                DataNode::B => read_from_node(&DATA_STORE_B, &key),
-                DataNode::C => read_from_node(&DATA_STORE_C, &key),
-            };
+            let result = read_from_node(&key);
 
             match result {
                 Some(data) => RpcResponse { result: data },
@@ -62,16 +71,10 @@ async fn handle_client(mut socket: tokio::net::TcpStream) {
             }
         }
         Op::Write(key, data) => {
-            //Modified to receive key from the client
-            let data_node = hash_key_to_node(&key);
-            match data_node {
-                DataNode::A => write_data_to_node(&DATA_STORE_A, key.clone(), data),
-                DataNode::B => write_data_to_node(&DATA_STORE_B, key.clone(), data),
-                DataNode::C => write_data_to_node(&DATA_STORE_C, key.clone(), data),
-            }
+            write_data_to_node(key.clone(), data);
 
             RpcResponse {
-                result: format!("Stored data under key '{}' on node {:?}", key, data_node),
+                result: format!("Stored data under key '{}' on node {}", key, node_id),
             }
         }
         _ => RpcResponse {
@@ -79,21 +82,23 @@ async fn handle_client(mut socket: tokio::net::TcpStream) {
         },
     };
 
-    //Sending the response generated:
-    let response_json = serde_json::to_string(&response).unwrap();
-    socket.write_all(response_json.as_bytes()).await.unwrap();
+    //Sending the response generated: back to client
+    let response_json = serde_json::to_string(&response)?;
+    socket.write_all(response_json.as_bytes()).await?;
+
+    Ok(())
 }
 
 //Helper functions to interact with data node
-fn read_from_node(store: &Mutex<HashMap<String, Vec<u8>>>, key: &str) -> Option<String> {
-    let store = store.lock().unwrap();
+fn read_from_node(key: &str) -> Option<String> {
+    let store = DATA_STORE.lock().unwrap();
     let result = store
         .get(key)
         .map(|val| format!("Data for key {} is {:?}", key, val));
     result
 }
 
-fn write_data_to_node(store: &Mutex<HashMap<String, Vec<u8>>>, key: String, data: Vec<u8>) {
-    let mut store = store.lock().unwrap();
+fn write_data_to_node(key: String, data: Vec<u8>) {
+    let mut store = DATA_STORE.lock().unwrap();
     store.insert(key, data);
 }
