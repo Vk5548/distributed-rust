@@ -20,6 +20,7 @@ struct EtcdDeleteRequest {
 // Function to register node with etcd
 pub async fn register_node_with_etcd(node_id: &str, address: &str) -> Result<(), Box<dyn Error>> {
     let etcd_url = "http://etcd-server:2379/v3/kv/put";
+    // let etcd_url = "http://localhost:2379/v3/kv/put";
 
     //Base64 encode the key and value as base64 uses encoding
     let key = general_purpose::STANDARD.encode(format!("/nodes/{}", node_id));
@@ -50,6 +51,7 @@ pub async fn register_node_with_etcd(node_id: &str, address: &str) -> Result<(),
 
 pub async fn deregister_node_from_etcd(node_id: &str) -> Result<(), Box<dyn Error>> {
     let etcd_url = "http://etcd-server:2379/v3/kv/deleterange";
+    // let etcd_url = "http://localhost:2379/v3/kv/deleterange";
 
     //Prepare the paylaod for Etcd delete request
     let payload = EtcdDeleteRequest {
