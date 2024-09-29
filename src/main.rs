@@ -28,7 +28,8 @@ async fn main() {
     for i in 0..num_servers {
         // generating unique node_id and addressess(port) for each server
         let node_id = format!("DataNode{}", i + 1);
-        let node_address = format!("127.0.0.1:{}", 8081 + i);
+        let node_address = format!("0.0.0.0:{}", 8080);
+        // let node_address = format!("127.0.0.1:{}", 8081 + i); // for when server and client run on the same container;Not the case anymore
 
         //Spawning a sperate task for each server;
         let task = task::spawn(async move {
@@ -42,17 +43,17 @@ async fn main() {
             }
 
             println!(
-                "Node {}registered with etcd container successfully ",
+                "Node {} registered with etcd container successfully : File : main.rs() ",
                 node_id
             );
 
             //Now starting the server so it runs indefinetely
             println!(
-                "Starting the srever for node: {} at this address : {}",
+                "Starting the server for node: {} at this address : {}",
                 node_id, node_address
             );
             if let Err(e) = server::start_server(&node_id, &node_address).await {
-                eprintln!("Server {} failed: {}", node_id, e);
+                eprintln!("Server {} failed: {}, File: main.rs", node_id, e);
             }
         });
         //pushing all the servers(tasks in the array and awaiting them)
@@ -62,7 +63,7 @@ async fn main() {
     // Waiting for all servers to start indefinetely
     for task in tasks {
         if let Err(e) = task.await {
-            eprintln!("A server task failed: {}", e);
+            eprintln!("A server task failed: {} main.rs", e);
         }
     }
 }

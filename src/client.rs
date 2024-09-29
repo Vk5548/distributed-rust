@@ -9,7 +9,15 @@ struct RpcResponse {
 }
 
 pub async fn send_request(op: Op) {
-    let mut socket = TcpStream::connect("127.0.0.1:8080").await.unwrap();
+    //  bcz external ports are 8081, 8082, 8083
+    // If the client runs on host machine
+    println!("Attempting to connect to the server at datanode1:8080");
+    // let mut socket = TcpStream::connect("127.0.0.1:8084").await.unwrap();
+
+    // If the client runs on a seperate container
+    let mut socket = TcpStream::connect("datanode1:8080").await.unwrap();
+    // let mut socket = TcpStream::connect("datanode2:8080").await.unwrap();
+    // let mut socket = TcpStream::connect("datanode3:8080").await.unwrap();
 
     //Serialize the operation and send it to the server
     let request_json = serde_json::to_string(&op).unwrap();

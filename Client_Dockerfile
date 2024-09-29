@@ -1,0 +1,23 @@
+# Client Dockerfile
+
+FROM rust:latest
+
+WORKDIR /usr/src/app
+
+# Verify that Rust is installed
+RUN rustc --version && cargo --version
+
+COPY . .
+
+# Build the client application
+RUN cargo build --release
+
+# Verify the client binary was built successfully
+RUN ls -l target/release/
+
+
+# Run the client application 
+# CMD ["cargo", "run", "--release", "--bin", "client_main"]  # Runs the client logic
+
+# Run the compiled binary directly
+CMD ["./target/release/client_main"]

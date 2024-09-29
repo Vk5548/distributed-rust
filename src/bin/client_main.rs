@@ -14,4 +14,9 @@ async fn main() {
     client::send_request(Op::Read("write_to_c?".to_string())).await;
     client::send_request(Op::Read("write_to_b?".to_string())).await;
     client::send_request(Op::Read("write_to_a?".to_string())).await;
+
+    //Adding a sleep and an infinite loop to keep the client running:
+    // loop {
+    //     tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
+    // }
 }

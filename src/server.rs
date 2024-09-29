@@ -11,7 +11,7 @@ use std::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct RpcResponse {
     result: String,
 }
@@ -27,7 +27,10 @@ pub async fn start_server(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     //Now binding to the specific server container
     let listener = TcpListener::bind(node_address).await?;
-    println!("Server or node {} is starting on {}", node_id, node_address);
+    println!(
+        "Server or node {} is starting on {} : File: server.rs",
+        node_id, node_address
+    );
 
     loop {
         match listener.accept().await {
@@ -35,12 +38,12 @@ pub async fn start_server(
                 let node_id_cloned = node_id.to_string();
                 tokio::spawn(async move {
                     if let Err(e) = handle_client(socket, node_id_cloned).await {
-                        eprintln!("Error handling client: {}", e);
+                        eprintln!("Error handling client: {}  File: server.rs", e);
                     }
                 });
             }
             Err(e) => {
-                eprintln!("Failed to accept connection: {}", e);
+                eprintln!("Failed to accept connection: {}  File: server.rs", e);
             }
         }
     }
@@ -53,28 +56,41 @@ async fn handle_client(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut buffer = vec![0; 1024];
 
+    //Debug : When a new client connects
+    println!("Client connected to node: {}", node_id);
+
     //getting the size of request from the client's TCP socket stream? and reading it into our created buffer
     let number_of_bytes = socket.read(&mut buffer).await?;
-    // getting the request itself and serializing it into Op
+    println!(
+        "Received {} bytes from client : File: server.rs",
+        number_of_bytes
+    );
+
+    // getting the request itself and serializing or deserializing it into Op
     let request: Op = serde_json::from_slice(&buffer[..number_of_bytes])?;
+    println!("File: server.rs => Parsed request: {:?} ", request);
 
     //Processing the request; Now we will include hashing to decide where the data should be written
     let response = match request {
         Op::Read(key) => {
             let result = read_from_node(&key);
-
+            println!(" File: server.rs Reading key: {}", key);
             match result {
                 Some(data) => RpcResponse { result: data },
                 None => RpcResponse {
-                    result: "Key Not Found(404)".to_string(),
+                    result: " File: server.rs Key Not Found(404)".to_string(),
                 },
             }
         }
         Op::Write(key, data) => {
+            println!("Writing data: {:?} to key: {}", data, key);
             write_data_to_node(key.clone(), data);
 
             RpcResponse {
-                result: format!("Stored data under key '{}' on node {}", key, node_id),
+                result: format!(
+                    " File: server.rs Stored data under key '{}' on node {}",
+                    key, node_id
+                ),
             }
         }
         _ => RpcResponse {
@@ -83,6 +99,8 @@ async fn handle_client(
     };
 
     //Sending the response generated: back to client
+    println!("Sending response: {:?}", response);
+
     let response_json = serde_json::to_string(&response)?;
     socket.write_all(response_json.as_bytes()).await?;
 
