@@ -18,6 +18,6 @@ docker build --no-cache -t datanode -f ./Dockerfile .
 
 
 # Step 4: Run the server containers in the custom network; when client also runs on container
-docker run -d --network my-distributed-system-network --name datanode1 -e NODE_ID="DataNode1" -e NODE_ADDRESS="0.0.0.0:8080" datanode
-docker run -d --network my-distributed-system-network --name datanode2 -e NODE_ID="DataNode2" -e NODE_ADDRESS="0.0.0.0:8080" datanode
-docker run -d --network my-distributed-system-network --name datanode3 -e NODE_ID="DataNode3" -e NODE_ADDRESS="0.0.0.0:8080" datanode
+docker run -d --network my-distributed-system-network --name datanode1 -e NODE_ID="DataNode1" -e NODE_ADDRESS="0.0.0.0:8080" -p 8081:8080 datanode
+docker run -d --network my-distributed-system-network --name datanode2 -e NODE_ID="DataNode2" -e NODE_ADDRESS="0.0.0.0:8080" -p 8082:8080 datanode
+docker run -d --network my-distributed-system-network --name datanode3 -e NODE_ID="DataNode3" -e NODE_ADDRESS="0.0.0.0:8080" -p 8083:8080 datanode

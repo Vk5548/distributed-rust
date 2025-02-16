@@ -26,21 +26,23 @@ pub async fn register_node_with_etcd(node_id: &str, address: &str) -> Result<(),
     let key = general_purpose::STANDARD.encode(format!("/nodes/{}", node_id));
     let value = general_purpose::STANDARD.encode(address);
 
-    // generating payload using the struct
-
+    // generating payload using the struct for the request to be sent
     let payload = EtcdPutRequest { key, value };
 
     //Creating the new client request
     let client = Client::new();
 
-    // json(&payload) serilaizes the payload automatically because the struct impleme ts teh trait of serde::Serialize: Cool; hun!
-    let res = client.post(etcd_url).json(&payload).send().await?;
+    // json(&payload) serilaizes the payload automatically because the struct implements the trait of serde::Serialize: Cool; hun!
+    let res = client.post(etcd_url).json(&payload).send().await?; //need to handle this with Result enum
 
     if res.status().is_success() {
-        println!("Node {} successfully registered with the etcd", node_id);
+        println!(
+            "Node {} successfully registered with the etcd -> File etcd.rs",
+            node_id
+        );
     } else {
         println!(
-            "Failed to register the Node {} with etcd : {:?}",
+            "Failed to register the Node {} with etcd -> File etcd.rs: {:?}",
             node_id,
             res.text().await?
         );
@@ -53,7 +55,7 @@ pub async fn deregister_node_from_etcd(node_id: &str) -> Result<(), Box<dyn Erro
     let etcd_url = "http://etcd-server:2379/v3/kv/deleterange";
     // let etcd_url = "http://localhost:2379/v3/kv/deleterange";
 
-    //Prepare the paylaod for Etcd delete request
+    //Prepare the payload for Etcd delete request
     let payload = EtcdDeleteRequest {
         key: general_purpose::STANDARD.encode(format!("/nodes/{}", node_id)),
     };
@@ -62,10 +64,10 @@ pub async fn deregister_node_from_etcd(node_id: &str) -> Result<(), Box<dyn Erro
     let res = client.post(etcd_url).json(&payload).send().await?;
 
     if res.status().is_success() {
-        println!("Node {} deregistered from etcd", node_id);
+        println!("Node {} deregistered from etcd -> File etcd.rs", node_id);
     } else {
         println!(
-            "Failed to deregister node {} from etcd: {:?}",
+            "Failed to deregister node {} from etcd: {:?} -> File etcd.rs",
             node_id,
             res.text().await?
         );

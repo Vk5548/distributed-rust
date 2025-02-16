@@ -13,6 +13,10 @@ lazy_static = "1.5.0"
 #added for etcd
 reqwest = { version ="0.12", features = ["json"] }
 base64 = "0.22"
+#to add the engine of momentoHash as decribed in the paper
+jumphash = "0.1.8"
+# to add the engine of siphash as decribed in the paper
+siphasher = "1.0.1"
 
 [lib]
 name = "simple_distribution_system"
