@@ -1,0 +1,23 @@
+// This file defines the schema and how data is serialized between services
+
+
+// this name needn't match the project name
+// this is the namespace for the schema
+namespace SimpleDistributionSystem;
+
+table LookUpRequest{
+    key : string,
+}
+
+table LookUpResponse{
+    datanode : string,
+}
+
+table NodeUpdate{
+    node_id : string,
+    active : bool,
+}
+
+// specifies that the root of the FlatBuffers binary format message is LookupResponse.
+// root_type defines the entry point when parsing a FlatBuffers binary format message.
+root_type LookUpResponse;

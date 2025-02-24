@@ -1,0 +1,35 @@
+// This defines the RPC API for the Coordinator
+
+//version of
+syntax = "proto3";
+
+//service which can be executed
+service Coordinator {
+    // defines a RPC method named GetDataNode
+    rpc GetDataNode (LookUpRequest) returns (LookUpResponse);
+    // defines a RPC method named WatchNodeChanges
+    rpc WatchNodeChanges (Empty) returns (stream NodeUpdate);
+}
+
+//arguments for GetDataNode
+message LookUpRequest{
+    //datatype and name and position
+    string key = 1;
+}
+
+//response for GetDataNode
+message LookUpResponse{
+    //datatype and name and position
+    string datanode = 1;
+}
+
+//arguments for WatchNodeChanges
+message Empty {}
+
+//response for WatchNodeChanges
+message NodeUpdate{
+    //datatype and name and position
+    string node_id = 1;
+    // if the node is active or not
+    bool active = 2;
+}

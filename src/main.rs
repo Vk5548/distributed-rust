@@ -14,7 +14,7 @@ use std::env;
 
 #[tokio::main]
 async fn main() {
-    //DOESN"T make sense, each cob=ntainer is now staring 3 containers
+    //DOESN"T make sense, each container is now staring 3 containers
     //Getting the number of servers to start from environment varibles or default to 3?
     // let num_servers: usize = env::var("NUM_SERVERS")
     //     .unwrap_or("3".to_string())

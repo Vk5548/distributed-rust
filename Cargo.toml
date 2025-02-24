@@ -5,7 +5,7 @@ edition = "2021"
 default-run = "simple_distribution_system"
 
 [dependencies]
-tokio = { version ="1.40.0", features=["full"] }
+tokio = { version ="1.43.0", features=["full"] }
 serde = { version = "1.0.210", features=["derive"] }
 serde_json = "1"
 #lazy_static for lazily intilizing these static values at runtime during their first access; for in-memory management
@@ -17,6 +17,23 @@ base64 = "0.22"
 jumphash = "0.1.8"
 # to add the engine of siphash as decribed in the paper
 siphasher = "1.0.1"
+#gRPC implementation in Rust
+tonic = "0.12.3"
+# protobuf for gRPC
+prost = "0.13.5"  
+# flatbuffers for gRPC
+flatbuffers = "25.2.10"
+# etcd client
+etcd-client = "0.14"
+# tokio stream for gRPC
+tokio-stream = "0.1.17"
+
+[build-dependencies]
+# used to generate Rust code from proto files
+tonic-build = "0.12.3"
+# used to generate Rust code from flatbuffers files
+flatc-rust = "0.2.0"
+
 
 [lib]
 name = "simple_distribution_system"

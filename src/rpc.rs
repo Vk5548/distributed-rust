@@ -7,3 +7,6 @@ pub enum Op {
     Stat(String),
     Delete(String),
 }
+
+// Won't be used since I am using gRPC instead of HTTP
+//with Flatbuffers instead of JSON and protobuf
